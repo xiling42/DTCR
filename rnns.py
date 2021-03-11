@@ -16,7 +16,7 @@ class dilated_encoder():
         
     def encoder(self, inputs):
         # 正向输入
-        cell_fw_list = [tf.nn.rnn_cell.GRUCell(num_units=units) for units in self.hidden_units]
+        cell_fw_list = [tf.compat.v1.nn.rnn_cell.GRUCell(num_units=units) for units in self.hidden_units]
         #state_fw.shape = [batchsize, units], ..., [batchsize, units]
         outputs_fw, states_fw = drnn.multi_dRNN_with_dilations(cell_fw_list, inputs, self.dilations, scope='forward_drnn')
 
@@ -25,7 +25,7 @@ class dilated_encoder():
         time_axis = 1
         inputs_bw = array_ops.reverse(inputs, axis=[time_axis])
 
-        cell_bw_list = [tf.nn.rnn_cell.GRUCell(num_units=units) for units in self.hidden_units]
+        cell_bw_list = [tf.compat.v1.nn.rnn_cell.GRUCell(num_units=units) for units in self.hidden_units]
         outputs_bw, states_bw = drnn.multi_dRNN_with_dilations(cell_bw_list, inputs_bw, self.dilations, scope='backward_drnn')        
         outputs_bw = array_ops.reverse(outputs_bw, axis=[time_axis])# 与输出相对
 
@@ -41,11 +41,11 @@ class single_layer_decoder():
         self.hidden_units = 2 * sum(opts['encoder_hidden_units'])
         
     def decoder(self, init_state, init_input):
-        cell = tf.nn.rnn_cell.GRUCell(self.hidden_units)
+        cell = tf.compat.v1.nn.rnn_cell.GRUCell(self.hidden_units)
         
         # 在原版的GRU中，ht = f(xt, ht-1), 即原本下一时刻都使用上一时刻的输出，当decoder中输入了有效的xt后，即使用了上一时刻的输出与本时刻的输入
         
-        outputs, _ = tf.nn.dynamic_rnn(cell=cell, inputs=init_input, initial_state=init_state)
+        outputs, _ = tf.compat.v1.nn.dynamic_rnn(cell=cell, inputs=init_input, initial_state=init_state)
         
         recons = outputs[:, :, 0]
         recons = tf.expand_dims(recons, axis=2)

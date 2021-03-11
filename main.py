@@ -14,9 +14,9 @@ INDEX = '4'
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(1)
-config = tf.ConfigProto()
+config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
-session = tf.Session(config=config)
+session = tf.compat.v1.Session(config=config)
 
 
 
@@ -32,8 +32,10 @@ if __name__ == '__main__':
     dataset_name = 'ChlorineConcentration' # any sub-dataset in UCRArchive_2018
     
     '''dataset setting'''
-    config_dtcr['train_file'] = './../UCRArchive_2018/{0}/{0}_TRAIN.tsv'.format(dataset_name) # re-config the path
-    config_dtcr['test_file'] = './../UCRArchive_2018/{0}/{0}_TEST.tsv'.format(dataset_name) # re-config the path
+    #config_dtcr['train_file'] = './../UCRArchive_2018/{0}/{0}_TRAIN.tsv'.format(dataset_name) # re-config the path
+    config_dtcr['train_file'] = r"C:\Projects\Go\src\github.com\DTCR\data\UCRArchive_2018\ChlorineConcentration\ChlorineConcentration_TRAIN.tsv"
+    #config_dtcr['test_file'] = './../UCRArchive_2018/{0}/{0}_TEST.tsv'.format(dataset_name) # re-config the path
+    config_dtcr['test_file'] = r"C:\Projects\Go\src\github.com\DTCR\data\UCRArchive_2018\ChlorineConcentration\ChlorineConcentration_TEST.tsv".format(dataset_name)  # re-config the path
     
     config_dtcr['img_path'] = os.path.join(img_folder, dataset_name)
     if os.path.exists(config_dtcr['img_path']) == False: os.makedirs(config_dtcr['img_path'])

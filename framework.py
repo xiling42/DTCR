@@ -15,7 +15,7 @@ class DTCR():
     def __init__(self, opts):
         self.opts = opts
         
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         
         self.creat_network()
         self.init_optimizers()
@@ -23,13 +23,14 @@ class DTCR():
     
     def creat_network(self):
         opts = self.opts
-        self.encoder_input = tf.placeholder(dtype=tf.float32, shape=(None, opts['input_length'], 1), name='encoder_input')
-        self.decoder_input = tf.placeholder(dtype=tf.float32, shape=(None, opts['input_length'], 1), name='decoder_input')
-        self.classification_labels = tf.placeholder(dtype=tf.float32, shape=(None, 2), name='classification_labels')
+        tf.compat.v1.disable_eager_execution()
+        self.encoder_input = tf.compat.v1.placeholder(dtype=tf.float32, shape=(None, opts['input_length'], 1), name='encoder_input')
+        self.decoder_input = tf.compat.v1.placeholder(dtype=tf.float32, shape=(None, opts['input_length'], 1), name='decoder_input')
+        self.classification_labels = tf.compat.v1.placeholder(dtype=tf.float32, shape=(None, 2), name='classification_labels')
         
         
         # seq2seq
-        with tf.variable_scope('seq2seq'):
+        with tf.compat.v1.variable_scope('seq2seq'):
             self.D_ENCODER = dilated_encoder(opts)
             self.h = self.D_ENCODER.encoder(self.encoder_input)
             
@@ -39,12 +40,12 @@ class DTCR():
             self.h_fake, self.h_real = tf.split(self.h, num_or_size_splits=2, axis=0)
             
         # classifier
-        with tf.variable_scope('classifier'):
+        with tf.compat.v1.variable_scope('classifier'):
             self.CLS = classifier(opts)
             output_without_softmax = self.CLS.cls_net(self.h)
         
         # K-means
-        with tf.variable_scope('kmeans'):
+        with tf.compat.v1.variable_scope('kmeans'):
             self.KMEANS = kmeans(opts)
             # update F
             kmeans_obj = self.KMEANS.kmeans_optimalize(self.h_real)
@@ -52,9 +53,9 @@ class DTCR():
         
         
         # L-reconstruction
-        self.loss_reconstruction = tf.losses.mean_squared_error(self.encoder_input, recons_input)
+        self.loss_reconstruction = tf.compat.v1.losses.mean_squared_error(self.encoder_input, recons_input)
         # L-classification
-        self.loss_classification = tf.losses.softmax_cross_entropy(self.classification_labels, output_without_softmax)
+        self.loss_classification = tf.compat.v1.losses.softmax_cross_entropy(self.classification_labels, output_without_softmax)
         # L-kmeans
         self.loss_kmeans = kmeans_obj
         
@@ -63,17 +64,17 @@ class DTCR():
         lambda_1 = self.opts['lambda']
         
         # vars
-        seq2seq_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='seq2seq')
-        cls_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='classifier')
+        seq2seq_vars = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope='seq2seq')
+        cls_vars = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope='classifier')
         end2end_vars = seq2seq_vars + cls_vars
         
-        kmeans_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='kmeans')
+        kmeans_vars = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope='kmeans')
         
         # loss
         self.loss_dtcr = self.loss_reconstruction + self.loss_classification + lambda_1 * self.loss_kmeans
         
         # optimizer
-        optimizer = tf.train.AdamOptimizer(learning_rate=5e-3)
+        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=5e-3)
         
         # update vars
         self.train_op = optimizer.minimize(self.loss_dtcr, var_list=end2end_vars)
@@ -104,11 +105,11 @@ class DTCR():
                   self.decoder_input: np.zeros_like(cls_data),
                   self.classification_labels: cls_label_}
         # session
-        config = tf.ConfigProto()
+        config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
-        sess = tf.Session(config=config)
-        sess.run(tf.global_variables_initializer())
-        print('vars_num: ', np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()]))
+        sess = tf.compat.v1.Session(config=config)
+        sess.run(tf.compat.v1.global_variables_initializer())
+        print('vars_num: ', np.sum([np.prod(v.get_shape().as_list()) for v in tf.compat.v1.trainable_variables()]))
 
         # init:
         train_h = sess.run(self.h_real, feed_dict=feed_d)
